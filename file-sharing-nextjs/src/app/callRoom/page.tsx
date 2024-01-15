@@ -468,7 +468,6 @@ const page = () => {
     fileReader.onload = (e: any) => {
      
       if (offset < file.size) {
-        console.log("bufferedAmount+bufferedAmountLowThreshold ", dataChannel.bufferedAmount , dataChannel.bufferedAmountLowThreshold)
         if(dataChannel.bufferedAmount < dataChannel.bufferedAmountLowThreshold){
           dataChannel.send(e.target.result);
           offset += e.target.result.byteLength;
@@ -496,7 +495,6 @@ const page = () => {
 
     receivedBuffers.push(event.data);
     bytesReceived += event.data.byteLength;
-    console.log(`Received message with size: ${event.data.byteLength}`);
     setProgress((bytesReceived / fileSize) * 100);
     // progress UI
 
