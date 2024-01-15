@@ -606,7 +606,7 @@ const page = () => {
             )}
           </div>
           <div>
-            <h1>Progress: {progress}</h1>
+            <h1>Progress: {progress.toFixed(2)}</h1>
           </div>
         </div>
 
