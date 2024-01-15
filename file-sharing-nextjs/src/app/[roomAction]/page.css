@@ -1,0 +1,75 @@
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@100&family=Oswald:wght@700&family=Poppins:wght@700&family=Roboto&family=Satisfy&family=Tektur:wght@400;800&display=swap");
+
+.signinput {
+  height: 50px;
+  width: 300px;
+  border-radius: 10px;
+  padding-left: 10px;
+  margin-bottom: 15px;
+  border: 2px solid transparent;
+  font-family: "Oswald", sans-serif;
+}
+.signSubmit {
+  margin-top: 15px;
+  height: 35px;
+  border-radius: 15px;
+  border: 2px solid transparent;
+  font-family: "Montserrat";
+  font-weight: bold;
+  width: 315px;
+}
+
+.signSubmit:active {
+  opacity: 0.1;
+}
+
+.formBox {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+@media (max-width: 800px) {
+  .signinput {
+    width: 250px;
+    height: 40px;
+  }
+  .signSubmit {
+    width: 250px;
+    height: 30px;
+  }
+  #mainLayoutDiv {
+    flex-direction: column-reverse;
+  }
+  #mainLayoutDivSub1 {
+    width: 90%;
+    height: 50%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-self: center;
+    max-width: 97vw;
+    min-height: 150px;
+  }
+  .createRoom {
+    margin-right: 15px;
+    margin-left: 0;
+  }
+  .joinRoom {
+    margin-right: 15px;
+    margin-left: 0;
+  }
+  #mainLayoutDivSub2 {
+    width: 95%;
+    height: 50vh;
+    max-width: 97vw;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+
+    font-size: 35px;
+    font-family: "Montserrat", sans-serif;
+    font-weight: bolder;
+  }
+}

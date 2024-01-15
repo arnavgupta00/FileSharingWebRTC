@@ -1,0 +1,187 @@
+#mainLayoutDiv {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+#mainLayoutDivSub1 {
+  width: 20%;
+  margin: 1%;
+  margin-left: 0.5%;
+  height: 85vh;
+  margin-top: 50px;
+  background-color: hsla(0, 0%, 0%, 0.2);
+  opacity: 0.7;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: column;
+}
+.mainLayoutDivSub1VideoBox {
+  width: 100%;
+  height: 40%;
+}
+.mainLayoutDivSub1VideoBoxVideo {
+  width: 95%;
+  height: 90%;
+  display: inline;
+}
+.mainLayoutDivSub1VideoBoxControls {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
+  padding-left: 30px;
+  padding-right: 30px;
+  gap: 30px;
+  opacity: 0.5;
+}
+#mainLayoutDivSub2 {
+  text-decoration: none;
+  width: 77%;
+
+  margin-top: 75px;
+  margin-right: 0.5%;
+  margin-bottom: 3.5%;
+  margin-left: 0;
+
+  height: 85vh;
+  background-color: hsla(0, 0%, 0%, 0.2);
+  opacity: 0.7;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  padding-top: 30px;
+  padding-bottom: 20px;
+}
+
+.chatSystem {
+  height: 55%;
+  width: 100%;
+}
+
+.chatDisplayBox {
+  height: 75%;
+  width: 100%;
+  overflow-y: hidden;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 10%;
+  overflow: scroll;
+  overflow-x: hidden;
+}
+
+.chatMessages {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+.chatSubmitBoxForm {
+  height: 20%;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chatSubmitBoxForm input[type="text"] {
+  width: 75%;
+  height: 50%;
+  border-radius: 10px;
+  font-size: 20px;
+  background-color: rgba(255, 255, 255, 0.5);
+  color: #0c2937;
+  border-color: transparent;
+}
+
+.chatSubmitBoxForm button {
+  width: 20%;
+  height: 60%;
+  border-radius: 10px;
+}
+.chatSubmitBoxForm button {
+  display: inline-block;
+  padding: 10px 10px;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  text-decoration: none;
+  background-color: rgba(255, 255, 255, 0.5);
+  color: #000000;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.chatSubmitBoxForm button:hover {
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.chatSubmitBoxForm button:active {
+  background-color: rgba(255, 255, 255, 1);
+}
+
+.mainLayoutDivSub2JoinBtn {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  text-decoration: none;
+  background-color: rgba(255, 255, 255, 0.5);
+  color: #000000;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.mainLayoutDivSub2JoinBtn:hover {
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.mainLayoutDivSub2JoinBtn:active {
+  background-color: rgba(255, 255, 255, 1);
+}
+
+@media (max-width: 800px) {
+  #mainLayoutDiv {
+    flex-direction: column-reverse;
+  }
+  #mainLayoutDivSub1 {
+    width: 90%;
+    height: 30%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-self: center;
+    max-width: 97vw;
+  }
+  .mainLayoutDivSub1VideoBox {
+    width: 100%;
+    height: 25%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  #mainLayoutDivSub2 {
+    width: 95%;
+    height: 50vh;
+    max-width: 97vw;
+  }
+  .mainLayoutDivSub1VideoBoxVideo {
+    max-width: 45vw;
+    max-height: 20vh;
+  }
+  .mainLayoutDivSub1VideoBoxControls {
+    width: 30%;
+    height: 100%;
+    gap: 10px;
+    scale: 1.5;
+    justify-content: center;
+    margin-left: 20%;
+  }
+  .mainLayoutDivSub1VideoBoxControlsScreenShare {
+    visibility: collapse;
+  }
+}
