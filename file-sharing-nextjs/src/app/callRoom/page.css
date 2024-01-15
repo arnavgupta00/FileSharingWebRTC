@@ -1,3 +1,6 @@
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@100&family=Oswald:wght@700&family=Poppins:wght@700&family=Roboto&family=Satisfy&family=Tektur:wght@400;800&display=swap");
+
+
 #mainLayoutDiv {
   display: flex;
   flex-direction: row;
@@ -55,6 +58,10 @@
   flex-wrap: wrap;
   padding-top: 30px;
   padding-bottom: 20px;
+  
+  font-size: 35px;
+  font-family: "Montserrat", sans-serif;
+  font-weight: bolder;
 }
 
 .chatSystem {
@@ -150,7 +157,7 @@
   }
   #mainLayoutDivSub1 {
     width: 90%;
-    height: 30%;
+    height: 0%;
     flex-direction: row;
     justify-content: space-between;
     align-self: center;
@@ -168,6 +175,13 @@
     width: 95%;
     height: 50vh;
     max-width: 97vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 15px;
+    font-family: "Montserrat", sans-serif;
+    font-weight: bolder;
   }
   .mainLayoutDivSub1VideoBoxVideo {
     max-width: 45vw;

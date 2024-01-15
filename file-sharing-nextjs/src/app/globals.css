@@ -1,17 +1,10 @@
 html {
-  background: linear-gradient(
-    to right,
-    #040818,
-    #061120,
-    #081928,
-    #0a2130,
-    #0c2937
-  );
+  background: linear-gradient(to bottom, #1d1d1d 0%, #1d1d1d 100%);
 }
 /*SCROLL BAR*/
 ::-webkit-scrollbar {
   width: 0.5rem;
-  background-color: #0c2937;
+  background-color: #1d1d1d;
   mix-blend-mode: multiply;
 }
 

@@ -1,6 +1,4 @@
 "use client";
-import "@/app/page.css";
-import "@/app/[roomAction]/page.css";
 import "@/app/callRoom/page.css";
 import Navbar from "@/components/navbar/navbar";
 import { useRef, useEffect, useState, useCallback } from "react";
@@ -601,7 +599,7 @@ const page = () => {
             {isDragActive ? (
               <p>Drop the files here ...</p>
             ) : (
-              <p>Drag 'n' drop some files here, or click to select files</p>
+              <p>Drag files here, or click </p>
             )}
           </div>
           <div>
