@@ -39,6 +39,8 @@ const page = () => {
 
   const [files, setFiles] = useState<File[]>([]);
 
+  const [progress, setProgress] = useState<number>(0);
+
   const configuration = {
     iceServers: [
       { urls: "stun:stun.l.google.com:19302" },
@@ -57,7 +59,7 @@ const page = () => {
     const pcStore: RTCPeerConnection = new RTCPeerConnection(configuration);
 
     var dataChannel = pcStore.createDataChannel("fileTransfer");
-
+    dataChannel.bufferedAmountLowThreshold = 1024 * 1024; 
     offerEvenSetup(pcStore, client, dataChannel);
     eventlistenerSetup(pcStore, client);
     addPeerConnection(client, pcStore);
@@ -271,6 +273,7 @@ const page = () => {
     setMessageList((prevList) => [...prevList, messageComp]);
   };
   const handleSendChat = (message: string) => {
+    if(message==="") return;
     socket.send(
       JSON.stringify({
         type: "chat",
@@ -460,18 +463,27 @@ const page = () => {
     const chunkSize = 16384; // 16 KB, customize this based on your need
     const fileReader = new FileReader();
     let offset = 0;
+    
     const readSlice = (o: number) => {
       const slice = file.slice(offset, o + chunkSize);
       fileReader.readAsArrayBuffer(slice);
     };
     fileReader.onload = (e: any) => {
-      dataChannel.send(e.target.result);
-      offset += e.target.result.byteLength;
-
+     
       if (offset < file.size) {
-        readSlice(offset);
+        console.log("bufferedAmount+bufferedAmountLowThreshold ", dataChannel.bufferedAmount , dataChannel.bufferedAmountLowThreshold)
+        if(dataChannel.bufferedAmount < dataChannel.bufferedAmountLowThreshold){
+          dataChannel.send(e.target.result);
+          offset += e.target.result.byteLength;
+          setProgress((offset / file.size) * 100);
+          readSlice(offset);
+        }else{
+          readSlice(offset);
+        }
+        
       }
     };
+    
 
     readSlice(0);
   };
@@ -488,7 +500,7 @@ const page = () => {
     receivedBuffers.push(event.data);
     bytesReceived += event.data.byteLength;
     console.log(`Received message with size: ${event.data.byteLength}`);
-
+    setProgress((bytesReceived / fileSize) * 100);
     // progress UI
 
     if (bytesReceived === fileSize) {
@@ -575,7 +587,7 @@ const page = () => {
             </div>
           )}
         </div>
-        <div id="mainLayoutDivSub2">
+        <div id="mainLayoutDivSub2" style={{display:"flex" ,justifyContent:"center" , alignItems:"center", flexDirection:"column"}}>
           {userAction == "joinRoom" && (
             <button
               className="mainLayoutDivSub2JoinBtn"
@@ -593,7 +605,11 @@ const page = () => {
               <p>Drag 'n' drop some files here, or click to select files</p>
             )}
           </div>
+          <div>
+            <h1>Progress: {progress}</h1>
+          </div>
         </div>
+
       </div>
     </>
   );
