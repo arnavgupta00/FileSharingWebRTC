@@ -3,25 +3,19 @@ import "@/app/page.css";
 import "@/app/[roomAction]/page.css";
 import "@/app/callRoom/page.css";
 import Navbar from "@/components/navbar/navbar";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { socket, userAction } from "@/components/functions/function";
-import ReactPlayer from "react-player";
+
 import useMediaQuery from "@mui/material/useMediaQuery";
+import { useDropzone } from "react-dropzone";
+
+import {} from "lucide-react";
 
 import {
-  Video,
-  VideoOff,
-  Mic,
-  MicOff,
-  ScreenShare,
-  ScreenShareIcon,
-} from "lucide-react";
-
-import {
-  streamLocal,
-  setStreamLocal,
-  tempaa,
-  setTempaa,
+  dataChannelExport,
+  setDataChannelExport,
+  // files,
+  // setFiles,
   setRoomNoVar,
   setFormData,
   formData,
@@ -31,33 +25,19 @@ import {
   addPeerConnection,
   getPeerConnections,
 } from "@/components/variableSet/variableSet";
-
-import { RemoteMedia } from "@/components/video/remoteMedia";
+import { Any } from "react-spring";
 
 const page = () => {
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-
-  const [remoteVideoTracks, setRemoteVideoTracks] = useState<
-    MediaStreamTrack[]
-  >([]);
-  const [remoteAudioTracks, setRemoteAudioTracks] = useState<
-    MediaStreamTrack[]
-  >([]);
-
-  const [localaStreamState, setLocalStreamState] = useState<MediaStream>();
-
-  const [remoteStream, setRemoteStream] = useState<MediaStream[]>([]);
 
   const isMobileOrTablet = useMediaQuery("(max-width: 767px)");
-
-  const [videoPremission, setVideoPremission] = useState<boolean>(true);
-  const [audioPremission, setAudioPremission] = useState<boolean>(true);
 
   const clientStreamMap = new Map<string, MediaStream>();
   const [width, setWidth] = useState<number>(0);
   const [message, setMessage] = useState<string>("");
 
   const [messageList, setMessageList] = useState<any[]>([]);
+
+  const [files, setFiles] = useState<File[]>([]);
 
   const configuration = {
     iceServers: [
@@ -66,11 +46,19 @@ const page = () => {
       { urls: "stun:global.stun.twilio.com:3478" },
     ],
   };
+  var receivedBuffers: any[] = [];
+  var fileSize = 0;
+  var fileType:string = "";
+  var fileName:string = "";
+  var bytesReceived = 0;
 
   const sendOffer = async (client: string) => {
     console.log("OFFER SENT TO", client);
     const pcStore: RTCPeerConnection = new RTCPeerConnection(configuration);
-    trackEventSetup(pcStore, client);
+
+    var dataChannel = pcStore.createDataChannel("fileTransfer");
+
+    offerEvenSetup(pcStore, client, dataChannel);
     eventlistenerSetup(pcStore, client);
     addPeerConnection(client, pcStore);
 
@@ -149,7 +137,7 @@ const page = () => {
     console.log(` OFFER BY ${data.senderID} RECIEVED`);
 
     const pcStore: RTCPeerConnection = new RTCPeerConnection(configuration);
-    trackEventSetup(pcStore, data.senderID);
+    offerEvenSetup(pcStore, data.senderID, null);
     eventlistenerSetup(pcStore, data.senderID);
 
     addPeerConnection(data.senderID, pcStore);
@@ -393,107 +381,26 @@ const page = () => {
     });
   };
 
-  const handleTrackEvent = (event: any, clientID: string) => {
-    console.log("track event", event.track);
-    const track = event.track;
+  const handleDataEvent = (event: any, clientID: string, dataChannel: any) => {
+    console.log("DATA EVENT", event.channel);
 
     var mediaStream = clientStreamMap.get(clientID) || new MediaStream();
 
-    if (track.kind === "audio") {
-      mediaStream = new MediaStream();
-    }
-    if (track.kind === "video") {
-      mediaStream.addTrack(track);
-      setRemoteVideoTracks((prevTracks) => [...prevTracks, track]);
-    }
-    if (track.kind === "audio") {
-      mediaStream.addTrack(track);
-      setRemoteAudioTracks((prevTracks) => [...prevTracks, track]);
-    }
-
     clientStreamMap.set(clientID, mediaStream);
+    if (event.channel) {
+      const receiveChannel = event.channel;
 
-    setRemoteStream([]);
+      receiveChannel.onmessage = function (event: any) {
+        console.log("File received!", event.data);
+        processReceivedFile(event);
+      };
+      receiveChannel.onopen = function (event: any) {
+        console.log("receiveChannel Data Channel is open");
+      };
 
-    Array.from(clientStreamMap.values()).map((stream: MediaStream) =>
-      setRemoteStream((prevStreams) => [...prevStreams, stream])
-    );
-
-    const number = Math.ceil(
-      Math.sqrt(
-        Array.from(clientStreamMap.values()).length > 0
-          ? Array.from(clientStreamMap.values()).length
-          : 1
-      )
-    );
-
-    setWidth(100 / number);
-
-    console.log(
-      "SET WIDTH LENGTH",
-      width,
-      number,
-      Array.from(clientStreamMap.values()).length
-    );
-  };
-
-  const startLocalStream = async () => {
-    try {
-      const stream: MediaStream = await navigator.mediaDevices.getUserMedia({
-        video: videoPremission,
-        audio: audioPremission,
-      });
-      setLocalStreamState(stream);
-      setStreamLocal(stream);
-
-      //await addTrackAddon(streamLocal);
-
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = streamLocal;
-      }
-    } catch (error) {
-      console.error("Error accessing local media:", error);
-    }
-  };
-  const startScreenStream = async () => {
-    try {
-      const stream: MediaStream = await navigator.mediaDevices.getDisplayMedia({
-        video: videoPremission,
-        audio: audioPremission,
-      });
-      setLocalStreamState(stream);
-      addTrackAddon(stream);
-      //await addTrackAddon(streamLocal);
-
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = streamLocal;
-      }
-    } catch (error) {
-      console.error("Error accessing local media:", error);
-    }
-  };
-
-  const manageStreamControls = (changeNeeded: string) => {
-    const localStream = streamLocal;
-    const audioTrack = localStream.getAudioTracks()[0]; // Assuming there is only one audio track
-    const videoTrack = localStream.getVideoTracks()[0]; // Assuming there is only one video track
-
-    if (audioTrack && !audioPremission && changeNeeded === "audio") {
-      audioTrack.enabled = true;
-      setAudioPremission(true);
-    }
-    if (videoTrack && !videoPremission && changeNeeded === "video") {
-      videoTrack.enabled = true;
-      setVideoPremission(true);
-    }
-    if (audioTrack && audioPremission && changeNeeded === "audio") {
-      audioTrack.enabled = false;
-      setAudioPremission(false);
-    }
-
-    if (videoTrack && videoPremission && changeNeeded === "video") {
-      videoTrack.enabled = false;
-      setVideoPremission(false);
+      receiveChannel.onclose = function () {
+        console.log("receiveChannel Data Channel is closed");
+      };
     }
   };
 
@@ -516,26 +423,111 @@ const page = () => {
       await handleNegotiationNeededOffer(clientID);
     };
   };
-  const trackEventSetup = (pc: RTCPeerConnection, clientID: string) => {
+  const offerEvenSetup = (
+    pc: RTCPeerConnection,
+    clientID: string,
+    dataChannel: any
+  ) => {
     try {
-      if (streamLocal) {
-        streamLocal
-          .getTracks()
-          .forEach((track) => pc.addTrack(track, streamLocal));
+      if (dataChannel) {
+        dataChannel.onopen = function (event: any) {
+          setDataChannelExport(dataChannel);
+          console.log("Data Channel is open");
+        };
 
-        console.log(`TRACK ADDED FOR ${clientID}`, streamLocal.getTracks(), pc);
+        dataChannel.onclose = function () {
+          console.log("Data Channel is closed");
+        };
+
+        console.log(`DATA CHANNEL ADDED FOR ${clientID}`, pc);
       }
     } catch (err) {
       console.log("error", err);
     }
 
-    pc.ontrack = (event) => {
-      handleTrackEvent(event, clientID);
+    pc.ondatachannel = (event) => {
+      handleDataEvent(event, clientID, dataChannel);
     };
   };
+  const onDrop = useCallback((acceptedFiles: any) => {
+    setFiles(acceptedFiles);
+    console.log("acceptedFiles", acceptedFiles);
+  }, []);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
+
+  const sendFile = (dataChannel: any, file: File) => {
+    const chunkSize = 16384; // 16 KB, customize this based on your need
+    const fileReader = new FileReader();
+    let offset = 0;
+    const readSlice = (o: number) => {
+      const slice = file.slice(offset, o + chunkSize);
+      fileReader.readAsArrayBuffer(slice);
+    };
+    fileReader.onload = (e: any) => {
+      dataChannel.send(e.target.result);
+      offset += e.target.result.byteLength;
+
+      if (offset < file.size) {
+        readSlice(offset);
+      }
+    };
+
+    readSlice(0);
+  };
+  const processReceivedFile = (event: any) => {
+    if (typeof event.data === "string") {
+      console.log(`Received METADATA`);
+      const metadata = JSON.parse(event.data);
+      fileSize = metadata.fileSize; 
+      fileType = metadata.fileType;
+      fileName = metadata.fileName;
+      return;
+    }
+
+    receivedBuffers.push(event.data);
+    bytesReceived += event.data.byteLength;
+    console.log(`Received message with size: ${event.data.byteLength}`);
+
+    // progress UI
+
+    if (bytesReceived === fileSize) {
+
+      console.log("File transfer complete");
+      const received = new Blob(receivedBuffers, {type: fileType});
+      receivedBuffers = [];
+
+      downloadReceivedFile(received);
+    }
+  };
+  const downloadReceivedFile = (blob: Blob) => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.style.display = "none";
+    a.href = url;
+    a.download = fileName || "download"; // rename
+    document.body.appendChild(a);
+    a.click();
+
+    window.URL.revokeObjectURL(url);
+  };
+
   const handleFormSubmit = (event: any) => {
     event.preventDefault();
     handleSendChat(message);
+  };
+
+  const startSharing = (dataChannel: any) => {
+    console.log(files[0]);
+    const metadata = JSON.stringify({
+      type: "metadata",
+      fileName: files[0].name,
+      fileSize: files[0].size,
+      fileType : files[0].type,
+    });
+    dataChannel.send(metadata);
+
+    sendFile(dataChannel, files[0]);
   };
 
   useEffect(() => {
@@ -546,17 +538,11 @@ const page = () => {
     console.log("LIST OF CLIENTS", clientList);
 
     const start = async () => {
-      await startLocalStream();
       connectionInitiator(clientList);
     };
     start();
 
-    return () => {
-      const tracks = (
-        localVideoRef.current?.srcObject as MediaStream
-      )?.getTracks();
-      tracks && tracks.forEach((track: MediaStreamTrack) => track.stop());
-    };
+    return () => {};
   }, []);
 
   return (
@@ -564,59 +550,6 @@ const page = () => {
       <Navbar />
       <div id="mainLayoutDiv">
         <div id="mainLayoutDivSub1">
-          <div className="mainLayoutDivSub1VideoBox">
-            {localaStreamState ? (
-              <ReactPlayer
-                className="mainLayoutDivSub1VideoBoxVideo"
-                url={localaStreamState}
-                playing
-                playsInline
-                muted
-              ></ReactPlayer>
-            ) : (
-              <div></div>
-            )}
-            <div className="mainLayoutDivSub1VideoBoxControls">
-              {videoPremission ? (
-                <Video
-                  style={{ color: "white", scale: "1.5" }}
-                  onClick={() => {
-                    manageStreamControls("video");
-                  }}
-                />
-              ) : (
-                <VideoOff
-                  style={{ color: "white", scale: "1.5" }}
-                  onClick={() => {
-                    manageStreamControls("video");
-                  }}
-                />
-              )}
-              {audioPremission ? (
-                <Mic
-                  className="mainLayoutDivSub1VideoBoxControlsMic"
-                  style={{ color: "white", scale: "1.5" }}
-                  onClick={() => {
-                    manageStreamControls("audio");
-                  }}
-                />
-              ) : (
-                <MicOff
-                  className="mainLayoutDivSub1VideoBoxControlsMic"
-                  style={{ color: "white", scale: "1.5" }}
-                  onClick={() => {
-                    manageStreamControls("audio");
-                  }}
-                />
-              )}
-
-              <ScreenShare
-                className="mainLayoutDivSub1VideoBoxControlsScreenShare"
-                style={{ color: "white", scale: "1.5", margin: "15px" }}
-                onClick={() => startScreenStream()}
-              />
-            </div>
-          </div>
           {isMobileOrTablet ? (
             <div></div>
           ) : (
@@ -643,32 +576,23 @@ const page = () => {
           )}
         </div>
         <div id="mainLayoutDivSub2">
-          {remoteStream.length === 0
-            ? userAction == "joinRoom" && (
-                <button
-                  className="mainLayoutDivSub2JoinBtn"
-                  onClick={() => handleStartVideoButton()}
-                  style={{}}
-                >
-                  Click To Join
-                </button>
-              )
-            : null}
-          {remoteStream.map((stream: MediaStream) => (
-            <ReactPlayer
-              style={{
-                maxWidth: `${width - 3}%`,
-                maxHeight: `${width - 3}%`,
-                flexGrow: "1",
-                flexShrink: "1",
-                marginBottom: "1%",
-                borderRadius: "25%",
-              }}
-              key={stream.id}
-              playing
-              url={stream}
-            />
-          ))}
+          {userAction == "joinRoom" && (
+            <button
+              className="mainLayoutDivSub2JoinBtn"
+              onClick={() => startSharing(dataChannelExport)}
+              style={{}}
+            >
+              Click To Share
+            </button>
+          )}
+          <div {...getRootProps()}>
+            <input {...getInputProps()} />
+            {isDragActive ? (
+              <p>Drop the files here ...</p>
+            ) : (
+              <p>Drag 'n' drop some files here, or click to select files</p>
+            )}
+          </div>
         </div>
       </div>
     </>

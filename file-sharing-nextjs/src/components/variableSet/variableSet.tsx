@@ -7,10 +7,16 @@ export const setRoomNoVar = (value:number) => {
   roomNoVar = value;
 };
 
-export var  tempaa: number = 0;
+export var  files: File[] = [];
 
-export const setTempaa = (value:number) => {
-  tempaa = value;
+export const setFiles = (value:File[]) => {
+  files = value;
+};
+
+export var  dataChannelExport: RTCDataChannel ;
+
+export const setDataChannelExport = (value:RTCDataChannel) => {
+  dataChannelExport = value;
 };
 
 export var  streamLocal: MediaStream;
