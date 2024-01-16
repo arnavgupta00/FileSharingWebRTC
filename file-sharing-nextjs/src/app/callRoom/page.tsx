@@ -391,7 +391,7 @@ const page = () => {
       const receiveChannel = event.channel;
 
       receiveChannel.onmessage = function (event: any) {
-        console.log("File received!", event.data);
+        
         processReceivedFile(event);
       };
       receiveChannel.onopen = function (event: any) {
@@ -525,6 +525,7 @@ const page = () => {
   };
 
   const startSharing = (dataChannel: any) => {
+    setProgress(0);
     console.log(files[0]);
     const metadata = JSON.stringify({
       type: "metadata",
