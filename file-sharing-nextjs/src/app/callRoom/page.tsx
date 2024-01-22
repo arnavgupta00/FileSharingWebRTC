@@ -1,4 +1,5 @@
 "use client";
+import "@/app/page.css";
 import "@/app/callRoom/page.css";
 import Navbar from "@/components/navbar/navbar";
 import { useRef, useEffect, useState, useCallback } from "react";
@@ -22,10 +23,10 @@ import {
   getClients,
   addPeerConnection,
   getPeerConnections,
+  removePeerConnection,
 } from "@/components/variableSet/variableSet";
 
 const page = () => {
-
   const isMobileOrTablet = useMediaQuery("(max-width: 767px)");
 
   const clientStreamMap = new Map<string, MediaStream>();
@@ -35,8 +36,12 @@ const page = () => {
   const [messageList, setMessageList] = useState<any[]>([]);
 
   const [files, setFiles] = useState<File[]>([]);
+  
+  const [fileCompleted, setFileCompleted] = useState<boolean[]>([]);
 
   const [progress, setProgress] = useState<number>(0);
+
+  const fileMap = new Map<File, any>();
 
   const configuration = {
     iceServers: [
@@ -47,8 +52,8 @@ const page = () => {
   };
   var receivedBuffers: any[] = [];
   var fileSize = 0;
-  var fileType:string = "";
-  var fileName:string = "";
+  var fileType: string = "";
+  var fileName: string = "";
   var bytesReceived = 0;
 
   const sendOffer = async (client: string) => {
@@ -56,7 +61,7 @@ const page = () => {
     const pcStore: RTCPeerConnection = new RTCPeerConnection(configuration);
 
     var dataChannel = pcStore.createDataChannel("fileTransfer");
-    dataChannel.bufferedAmountLowThreshold = 1024 * 1024; 
+    dataChannel.bufferedAmountLowThreshold = 1024 * 1024;
     offerEvenSetup(pcStore, client, dataChannel);
     eventlistenerSetup(pcStore, client);
     addPeerConnection(client, pcStore);
@@ -270,7 +275,7 @@ const page = () => {
     setMessageList((prevList) => [...prevList, messageComp]);
   };
   const handleSendChat = (message: string) => {
-    if(message==="") return;
+    if (message === "") return;
     socket.send(
       JSON.stringify({
         type: "chat",
@@ -391,7 +396,6 @@ const page = () => {
       const receiveChannel = event.channel;
 
       receiveChannel.onmessage = function (event: any) {
-        
         processReceivedFile(event);
       };
       receiveChannel.onopen = function (event: any) {
@@ -456,38 +460,50 @@ const page = () => {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
-  const sendFile = (dataChannel: any, file: File) => {
-    const chunkSize = 16384; // 16 KB, customize this based on your need
-    const fileReader = new FileReader();
-    let offset = 0;
-    
-    const readSlice = (o: number) => {
-      const slice = file.slice(offset, o + chunkSize);
-      fileReader.readAsArrayBuffer(slice);
-    };
-    fileReader.onload = (e: any) => {
-     
-      if (offset < file.size) {
-        if(dataChannel.bufferedAmount < dataChannel.bufferedAmountLowThreshold){
-          dataChannel.send(e.target.result);
-          offset += e.target.result.byteLength;
-          setProgress((offset / file.size) * 100);
-          readSlice(offset);
-        }else{
-          readSlice(offset);
+  const sendFile = async (dataChannel: any, file: File) => {
+    return new Promise((resolve, reject) => {
+      const chunkSize = 16384; // 16 KB
+      const fileReader = new FileReader();
+      let offset = 0;
+      console.log("FILE SEND SUCCESSFUL");
+      const readSlice = (o: number) => {
+        const slice = file.slice(offset, o + chunkSize);
+        fileReader.readAsArrayBuffer(slice);
+      };
+      fileReader.onload = (e: any) => {
+        if (offset < file.size) {
+          if (
+            dataChannel.bufferedAmount < dataChannel.bufferedAmountLowThreshold
+          ) {
+            dataChannel.send(e.target.result);
+            offset += e.target.result.byteLength;
+            setProgress((offset / file.size) * 100);
+            if (offset === file.size) {
+              console.log("FILE SENT COMPLETE");
+              setProgress(0);
+              fileMap.set(file, true);
+              resolve(void 0);
+            }
+            readSlice(offset);
+          } else {
+            readSlice(offset);
+          }
         }
-        
-      }
-    };
-    
+        fileReader.onerror = (error) => {
+          console.error("Error reading file", error);
+          reject(error);
+        };
+      };
 
-    readSlice(0);
+      readSlice(0);
+    });
   };
   const processReceivedFile = (event: any) => {
+    console.log("FILE RECIEVED SUCCESSFUL");
     if (typeof event.data === "string") {
       console.log(`Received METADATA`);
       const metadata = JSON.parse(event.data);
-      fileSize = metadata.fileSize; 
+      fileSize = metadata.fileSize;
       fileType = metadata.fileType;
       fileName = metadata.fileName;
       return;
@@ -499,11 +515,11 @@ const page = () => {
     // progress UI
 
     if (bytesReceived === fileSize) {
-
       console.log("File transfer complete");
-      const received = new Blob(receivedBuffers, {type: fileType});
+      const received = new Blob(receivedBuffers, { type: fileType });
       receivedBuffers = [];
-
+      bytesReceived = 0;
+      setProgress(0);
       downloadReceivedFile(received);
     }
   };
@@ -524,18 +540,49 @@ const page = () => {
     handleSendChat(message);
   };
 
-  const startSharing = (dataChannel: any) => {
+  const handleFileSend = async (
+    file: File,
+    dataChannel: RTCDataChannel,
+    index: number
+  ): Promise<void>=>{
+    fileMap.set(file, false);
+    if (index !== 0) {
+      await waitForFileCompletion(files[index - 1]);
+    }
+    console.log("FILE SENT---", file);
     setProgress(0);
-    console.log(files[0]);
+    console.log(file);
     const metadata = JSON.stringify({
       type: "metadata",
-      fileName: files[0].name,
-      fileSize: files[0].size,
-      fileType : files[0].type,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
     });
+
+    fileMap.set(file, "inProg");
+
     dataChannel.send(metadata);
 
-    sendFile(dataChannel, files[0]);
+    await sendFile(dataChannel, file);
+
+    setFileCompleted((prev) => [...prev, true]);
+  };
+
+  const waitForFileCompletion = (file: File): Promise<void> => {
+    return new Promise(resolve => {
+      const checkInterval = setInterval(() => {
+        if (fileMap.get(file) === true) {
+          clearInterval(checkInterval);
+          resolve();
+        }
+      }, 100);
+    });
+  };
+  const startSharing = async(dataChannel: any) => {
+    for (let index = 0; index < files.length; index++) {
+      const file = files[index];
+      await handleFileSend(file, dataChannel, index); 
+    }
   };
 
   useEffect(() => {
@@ -550,7 +597,21 @@ const page = () => {
     };
     start();
 
-    return () => {};
+    return () => {
+      var clientList = getClients();
+      const clientListSet = new Set(clientList);
+      clientList = Array.from(clientListSet);
+      console.log("CLEANUP FIRED");
+      clientList.forEach((client) => {
+        const pcList = getPeerConnections();
+        const pc = pcList[client];
+        if (pc) {
+          pc.close();
+          console.log("CLEANUP FIRED", client);
+          removePeerConnection(client);
+        }
+      });
+    };
   }, []);
 
   return (
@@ -558,6 +619,16 @@ const page = () => {
       <Navbar />
       <div id="mainLayoutDiv">
         <div id="mainLayoutDivSub1">
+          {(files.length > 0) ? <div style={{paddingTop:"50px",scale:0.9,overflowY:"scroll",display:"flex",width:"100%", height:"50vh", flexDirection:"column", justifyContent:"center" ,alignItems:"center",gap:"15px"}}>
+            {files.map((file, index) => {
+              return (
+                <div style={{width:"90%" , height:"100px" , borderRadius:"15px" ,display:"flex",justifyContent:"center",alignItems:"center",textAlign:"center", backgroundColor: fileCompleted[index] ? "rgb(38, 106, 38)" : "black" , color:"rgba(255, 255, 255, 0.5)"}}>
+                  <h3>{file.name.slice(0,10)}</h3>
+                </div>
+              );
+            })}
+          </div> : null }
+
           {isMobileOrTablet ? (
             <div></div>
           ) : (
@@ -583,7 +654,15 @@ const page = () => {
             </div>
           )}
         </div>
-        <div id="mainLayoutDivSub2" style={{display:"flex" ,justifyContent:"center" , alignItems:"center", flexDirection:"column"}}>
+        <div
+          id="mainLayoutDivSub2"
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            flexDirection: "column",
+          }}
+        >
           {userAction == "joinRoom" && (
             <button
               className="mainLayoutDivSub2JoinBtn"
@@ -605,7 +684,6 @@ const page = () => {
             <h1>Progress: {progress.toFixed(2)}</h1>
           </div>
         </div>
-
       </div>
     </>
   );

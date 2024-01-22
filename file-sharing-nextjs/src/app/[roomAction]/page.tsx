@@ -1,6 +1,6 @@
 "use client";
 import Form from "./form";
-
+import "@/app/page.css"
 import "@/app/[roomAction]/page.css";
 import Navbar from "@/components/navbar/navbar";
 
