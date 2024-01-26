@@ -57,7 +57,8 @@ const page = () => {
   var fileType: string = "";
   var fileName: string = "";
   var bytesReceived = 0;
-  var startTime: any = 0, endTime: any;
+  var startTime: any = 0,
+    endTime: any;
 
   var totalTimeElapsed = 0; // MS
 
@@ -515,7 +516,6 @@ const page = () => {
     });
   };
   const processReceivedFile = (event: any) => {
-
     console.log("FILE RECIEVED SUCCESSFUL");
     if (typeof event.data === "string") {
       console.log(`Received METADATA`);
@@ -523,6 +523,10 @@ const page = () => {
       fileSize = metadata.fileSize;
       fileType = metadata.fileType;
       fileName = metadata.fileName;
+
+      const fileObject = new File([], fileName, { type: fileType });
+
+      setFiles((prev) => [...prev, fileObject]);
       return;
     }
 
@@ -531,7 +535,7 @@ const page = () => {
     setProgress((bytesReceived / fileSize) * 100);
     // progress UI
     endTime = performance.now();
-    
+
     const timeElapsed = endTime - startTime;
     totalTimeElapsed += timeElapsed;
 
@@ -546,9 +550,9 @@ const page = () => {
       setSpeedTransferBPS(0);
 
       downloadReceivedFile(received);
+      setFileCompleted((prev) => [...prev, true]);
     }
     startTime = performance.now();
-
   };
   const downloadReceivedFile = (blob: Blob) => {
     const url = window.URL.createObjectURL(blob);
@@ -720,42 +724,45 @@ const page = () => {
           }}
         >
           {userAction == "joinRoom" && (
-            <button
-              className="mainLayoutDivSub2JoinBtn"
-              onClick={() => startSharing(dataChannelExport)}
-              style={{}}
-            >
-              Click To Share
-            </button>
+            <>
+              <button
+                className="mainLayoutDivSub2JoinBtn"
+                onClick={() => startSharing(dataChannelExport)}
+                style={{marginBottom: "30px"}}
+              >
+                Click To Share
+              </button>
+
+              <div {...getRootProps()}>
+                <input {...getInputProps()} />
+                {isDragActive ? (
+                  <div
+                    className="dragNdrop"
+                    style={{
+                      border: "5px solid rgba(255, 255, 255, 0.5)",
+                      borderRadius: "10px",
+                      color: "rgba(255, 255, 255, 0.5)",
+                      padding: "15px",
+                    }}
+                  >
+                    Drop the files here ...
+                  </div>
+                ) : (
+                  <div
+                    className="dragNdrop"
+                    style={{
+                      border: "5px solid rgba(255, 255, 255, 0.5)",
+                      borderRadius: "10px",
+                      color: "rgba(255, 255, 255, 0.5)",
+                      padding: "15px",
+                    }}
+                  >
+                    Drag files here, or click{" "}
+                  </div>
+                )}
+              </div>
+            </>
           )}
-          <div {...getRootProps()}>
-            <input {...getInputProps()} />
-            {isDragActive ? (
-              <div
-                className="dragNdrop"
-                style={{
-                  border: "5px solid rgba(255, 255, 255, 0.5)",
-                  borderRadius: "10px",
-                  color: "rgba(255, 255, 255, 0.5)",
-                  padding: "15px",
-                }}
-              >
-                Drop the files here ...
-              </div>
-            ) : (
-              <div
-                className="dragNdrop"
-                style={{
-                  border: "5px solid rgba(255, 255, 255, 0.5)",
-                  borderRadius: "10px",
-                  color: "rgba(255, 255, 255, 0.5)",
-                  padding: "15px",
-                }}
-              >
-                Drag files here, or click{" "}
-              </div>
-            )}
-          </div>
           <div>
             <h1
               className="progressBar"

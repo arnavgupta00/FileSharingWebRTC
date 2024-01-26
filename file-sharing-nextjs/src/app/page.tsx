@@ -14,14 +14,14 @@ export default function Home() {
             className="createRoom"
             style={{ textDecoration: "none", color: "black", scale: 0.75 }}
           >
-            <p>Create Room</p>
+            <p>Recieve Files</p>
           </Link>
           <Link
             href="/roomJoin"
             className="joinRoom"
             style={{ textDecoration: "none", color: "black", scale: 0.75 }}
           >
-            <p>Join Room</p>
+            <p>Send Files</p>
           </Link>
         </div>
       </div>

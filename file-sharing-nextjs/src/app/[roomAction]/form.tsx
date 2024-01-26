@@ -83,7 +83,7 @@ const Form: React.FC<FormProps> = ({ actionCreate }) => {
               <input
                 className="signSubmit"
                 type="submit"
-                value="Create Room"
+                value="Create Session"
                 onClick={() => {
                   handleOnCreate(
                     socketForm ? socketForm : setSocket()
@@ -124,7 +124,7 @@ const Form: React.FC<FormProps> = ({ actionCreate }) => {
               <input
                 className="signSubmit"
                 type="submit"
-                value="Join Room"
+                value="Join Session"
                 onClick={() => {
                   handleOnJoin(
                     socketForm ? socketForm : setSocket()

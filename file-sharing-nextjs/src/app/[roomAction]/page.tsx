@@ -1,6 +1,6 @@
 "use client";
 import Form from "./form";
-import "@/app/page.css"
+import "@/app/page.css";
 import "@/app/[roomAction]/page.css";
 import Navbar from "@/components/navbar/navbar";
 
@@ -12,7 +12,15 @@ const page = ({ params }: { params: { roomAction: string } }) => {
       <Navbar />
       <div id="mainLayoutDiv">
         <div id="mainLayoutDivSub1"></div>
-        <div id="mainLayoutDivSub2">
+        <div
+          id="mainLayoutDivSub2"
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            flexDirection: "column",
+          }}
+        >
           {action === "roomCreate" && <Form actionCreate="true" />}
           {action === "roomJoin" && (
             <>
