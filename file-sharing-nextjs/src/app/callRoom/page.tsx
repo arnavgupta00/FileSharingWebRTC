@@ -61,7 +61,7 @@ const page = () => {
     const pcStore: RTCPeerConnection = new RTCPeerConnection(configuration);
 
     var dataChannel = pcStore.createDataChannel("fileTransfer");
-    dataChannel.bufferedAmountLowThreshold = 1024 * 1024;
+    dataChannel.bufferedAmountLowThreshold = 1024*1024 //1024 KB;
     offerEvenSetup(pcStore, client, dataChannel);
     eventlistenerSetup(pcStore, client);
     addPeerConnection(client, pcStore);
@@ -462,7 +462,7 @@ const page = () => {
 
   const sendFile = async (dataChannel: any, file: File) => {
     return new Promise((resolve, reject) => {
-      const chunkSize = 16384; // 16 KB
+      const chunkSize = 262144 ; // 256 KB
       const fileReader = new FileReader();
       let offset = 0;
       console.log("FILE SEND SUCCESSFUL");
