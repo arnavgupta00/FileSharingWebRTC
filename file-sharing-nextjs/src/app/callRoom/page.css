@@ -115,6 +115,19 @@
   background-color: rgba(255, 255, 255, 1);
 }
 
+.dragNdrop{
+  font-size: 35px;
+  font-weight: bolder;
+}
+.progressBar{
+  font-size: 45px;
+  font-weight: bolder;
+}
+.speedBar{
+  font-size: 30px;
+  font-weight: bolder;
+}
+
 @media (max-width: 800px) {
   #mainLayoutDiv {
     flex-direction: column-reverse;
@@ -157,5 +170,17 @@
   }
   .mainLayoutDivSub1VideoBoxControlsScreenShare {
     visibility: collapse;
+  }
+  .dragNdrop{
+    font-size: 20px;
+    font-weight: bolder;
+  }
+  .progressBar{
+    font-size: 25px;
+    font-weight: bolder;
+  }
+  .speedBar{
+    font-size: 15px;
+    font-weight: bolder;
   }
 }

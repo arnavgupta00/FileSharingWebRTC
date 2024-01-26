@@ -36,10 +36,12 @@ const page = () => {
   const [messageList, setMessageList] = useState<any[]>([]);
 
   const [files, setFiles] = useState<File[]>([]);
-  
+
   const [fileCompleted, setFileCompleted] = useState<boolean[]>([]);
 
   const [progress, setProgress] = useState<number>(0);
+
+  const [speedTransferBPS, setSpeedTransferBPS] = useState<number>(0);
 
   const fileMap = new Map<File, any>();
 
@@ -55,13 +57,16 @@ const page = () => {
   var fileType: string = "";
   var fileName: string = "";
   var bytesReceived = 0;
+  var startTime: any = 0, endTime: any;
+
+  var totalTimeElapsed = 0; // MS
 
   const sendOffer = async (client: string) => {
     console.log("OFFER SENT TO", client);
     const pcStore: RTCPeerConnection = new RTCPeerConnection(configuration);
 
     var dataChannel = pcStore.createDataChannel("fileTransfer");
-    dataChannel.bufferedAmountLowThreshold = 1024*1024 //1024 KB;
+    dataChannel.bufferedAmountLowThreshold = 1024 * 1024; //1024 KB;
     offerEvenSetup(pcStore, client, dataChannel);
     eventlistenerSetup(pcStore, client);
     addPeerConnection(client, pcStore);
@@ -462,9 +467,10 @@ const page = () => {
 
   const sendFile = async (dataChannel: any, file: File) => {
     return new Promise((resolve, reject) => {
-      const chunkSize = 262144 ; // 256 KB
+      const chunkSize = 262144; // 256 KB
       const fileReader = new FileReader();
       let offset = 0;
+
       console.log("FILE SEND SUCCESSFUL");
       const readSlice = (o: number) => {
         const slice = file.slice(offset, o + chunkSize);
@@ -478,12 +484,22 @@ const page = () => {
             dataChannel.send(e.target.result);
             offset += e.target.result.byteLength;
             setProgress((offset / file.size) * 100);
+
+            endTime = performance.now();
+
+            const timeElapsed = endTime - startTime;
+            totalTimeElapsed += timeElapsed;
+
+            setSpeedTransferBPS(offset / (totalTimeElapsed / 1000));
+
             if (offset === file.size) {
               console.log("FILE SENT COMPLETE");
               setProgress(0);
+              setSpeedTransferBPS(0);
               fileMap.set(file, true);
               resolve(void 0);
             }
+            startTime = performance.now();
             readSlice(offset);
           } else {
             readSlice(offset);
@@ -494,11 +510,12 @@ const page = () => {
           reject(error);
         };
       };
-
+      startTime = performance.now();
       readSlice(0);
     });
   };
   const processReceivedFile = (event: any) => {
+
     console.log("FILE RECIEVED SUCCESSFUL");
     if (typeof event.data === "string") {
       console.log(`Received METADATA`);
@@ -513,6 +530,12 @@ const page = () => {
     bytesReceived += event.data.byteLength;
     setProgress((bytesReceived / fileSize) * 100);
     // progress UI
+    endTime = performance.now();
+    
+    const timeElapsed = endTime - startTime;
+    totalTimeElapsed += timeElapsed;
+
+    setSpeedTransferBPS(bytesReceived / (totalTimeElapsed / 1000));
 
     if (bytesReceived === fileSize) {
       console.log("File transfer complete");
@@ -520,8 +543,12 @@ const page = () => {
       receivedBuffers = [];
       bytesReceived = 0;
       setProgress(0);
+      setSpeedTransferBPS(0);
+
       downloadReceivedFile(received);
     }
+    startTime = performance.now();
+
   };
   const downloadReceivedFile = (blob: Blob) => {
     const url = window.URL.createObjectURL(blob);
@@ -544,7 +571,7 @@ const page = () => {
     file: File,
     dataChannel: RTCDataChannel,
     index: number
-  ): Promise<void>=>{
+  ): Promise<void> => {
     fileMap.set(file, false);
     if (index !== 0) {
       await waitForFileCompletion(files[index - 1]);
@@ -569,7 +596,7 @@ const page = () => {
   };
 
   const waitForFileCompletion = (file: File): Promise<void> => {
-    return new Promise(resolve => {
+    return new Promise((resolve) => {
       const checkInterval = setInterval(() => {
         if (fileMap.get(file) === true) {
           clearInterval(checkInterval);
@@ -578,10 +605,10 @@ const page = () => {
       }, 100);
     });
   };
-  const startSharing = async(dataChannel: any) => {
+  const startSharing = async (dataChannel: any) => {
     for (let index = 0; index < files.length; index++) {
       const file = files[index];
-      await handleFileSend(file, dataChannel, index); 
+      await handleFileSend(file, dataChannel, index);
     }
   };
 
@@ -619,15 +646,44 @@ const page = () => {
       <Navbar />
       <div id="mainLayoutDiv">
         <div id="mainLayoutDivSub1">
-          {(files.length > 0) ? <div style={{paddingTop:"50px",scale:0.9,overflowY:"scroll",display:"flex",width:"100%", height:"50vh", flexDirection:"column", justifyContent:"center" ,alignItems:"center",gap:"15px"}}>
-            {files.map((file, index) => {
-              return (
-                <div style={{width:"90%" , height:"100px" , borderRadius:"15px" ,display:"flex",justifyContent:"center",alignItems:"center",textAlign:"center", backgroundColor: fileCompleted[index] ? "rgb(38, 106, 38)" : "black" , color:"rgba(255, 255, 255, 0.5)"}}>
-                  <h3>{file.name.slice(0,10)}</h3>
-                </div>
-              );
-            })}
-          </div> : null }
+          {files.length > 0 ? (
+            <div
+              style={{
+                paddingTop: "50px",
+                scale: 0.9,
+                overflowY: "scroll",
+                display: "flex",
+                width: "100%",
+                height: "50vh",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: "15px",
+              }}
+            >
+              {files.map((file, index) => {
+                return (
+                  <div
+                    style={{
+                      width: "90%",
+                      height: "100px",
+                      borderRadius: "15px",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      textAlign: "center",
+                      backgroundColor: fileCompleted[index]
+                        ? "rgb(38, 106, 38)"
+                        : "black",
+                      color: "rgba(255, 255, 255, 0.5)",
+                    }}
+                  >
+                    <h3>{file.name.slice(0, 10)}</h3>
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
 
           {isMobileOrTablet ? (
             <div></div>
@@ -675,13 +731,47 @@ const page = () => {
           <div {...getRootProps()}>
             <input {...getInputProps()} />
             {isDragActive ? (
-              <p>Drop the files here ...</p>
+              <div
+                className="dragNdrop"
+                style={{
+                  border: "5px solid rgba(255, 255, 255, 0.5)",
+                  borderRadius: "10px",
+                  color: "rgba(255, 255, 255, 0.5)",
+                  padding: "15px",
+                }}
+              >
+                Drop the files here ...
+              </div>
             ) : (
-              <p>Drag files here, or click </p>
+              <div
+                className="dragNdrop"
+                style={{
+                  border: "5px solid rgba(255, 255, 255, 0.5)",
+                  borderRadius: "10px",
+                  color: "rgba(255, 255, 255, 0.5)",
+                  padding: "15px",
+                }}
+              >
+                Drag files here, or click{" "}
+              </div>
             )}
           </div>
           <div>
-            <h1>Progress: {progress.toFixed(2)}</h1>
+            <h1
+              className="progressBar"
+              style={{ color: "rgba(255, 255, 255, 0.5)" }}
+            >
+              Progress: {progress.toFixed(2)}
+            </h1>
+          </div>
+          <div>
+            <h1
+              className="speedBar"
+              style={{ color: "rgba(255, 255, 255, 0.5)" }}
+            >
+              Speed:{" "}
+              {(Number(speedTransferBPS.toFixed(2)) / 1000_000).toFixed(2)} MB/S
+            </h1>
           </div>
         </div>
       </div>
