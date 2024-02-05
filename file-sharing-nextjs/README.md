@@ -1,5 +1,8 @@
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
+## First visit (https://videochatsignallingserverrender.onrender.com/) and make sure my backend server is online if it isn't wait for 1-2 min after visiting this link!!
+
+
 ## Getting Started
 
 First, run the development server:
